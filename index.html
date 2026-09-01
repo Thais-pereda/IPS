@@ -1,0 +1,883 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>IPS® · Guia de continuidade</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500&family=Source+Sans+3:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --marinho:#073A59;
+    --marinho-suave:#38504f;
+    --azul-claro:#CFDEE7;
+    --azul-lavado:#EAF1F5;
+    --dourado:#C6A15B;
+    --dourado-claro:#E4D3AC;
+    --papel:#FBFAF7;
+    --papel-card:#FFFFFF;
+    --tinta:#2B3944;
+    --tinta-suave:#5E6E78;
+    --tinta-tenue:#93A2AC;
+    --linha:#E7EDF0;
+    --alerta:#8A6A2F;
+    --alerta-bg:#FBF6EC;
+    --sombra:0 1px 2px rgba(7,58,89,.04), 0 8px 30px rgba(7,58,89,.06);
+    --sombra-forte:0 2px 6px rgba(7,58,89,.06), 0 20px 50px rgba(7,58,89,.10);
+    --serif:'Fraunces',Georgia,serif;
+    --sans:'Source Sans 3','Source Sans Pro',system-ui,sans-serif;
+    --raio:18px;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    font-family:var(--sans);background:var(--papel);color:var(--tinta);
+    line-height:1.6;-webkit-font-smoothing:antialiased;overflow-x:hidden;
+    min-height:100vh;min-height:100dvh;
+  }
+  body::before{
+    content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
+    background:
+      radial-gradient(120% 80% at 50% -10%, rgba(207,222,231,.45), transparent 60%),
+      radial-gradient(90% 60% at 100% 110%, rgba(228,211,172,.18), transparent 55%);
+  }
+  .app{
+    position:relative;z-index:1;max-width:560px;margin:0 auto;
+    padding:0 22px calc(48px + env(safe-area-inset-bottom));
+    min-height:100vh;min-height:100dvh;
+  }
+  .screen{display:none;animation:rise .5s cubic-bezier(.16,1,.3,1) both}
+  .screen.active{display:block}
+  @keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+  .stagger>*{animation:rise .55s cubic-bezier(.16,1,.3,1) both}
+
+  /* header */
+  .topbar{display:flex;align-items:center;justify-content:space-between;padding:26px 0 10px;gap:12px}
+  .brand{font-family:var(--serif);font-size:15px;letter-spacing:.12em;text-transform:uppercase;color:var(--marinho);font-weight:500}
+  .brand span{color:var(--dourado)}
+  .link-btn{
+    background:none;border:none;font-family:var(--sans);color:var(--tinta-suave);
+    font-size:14px;cursor:pointer;padding:8px;border-radius:10px;transition:color .2s;
+    display:inline-flex;align-items:center;gap:6px;
+  }
+  .link-btn:hover{color:var(--marinho)}
+  .link-btn:active{transform:scale(.97)}
+  .pausar-btn{
+    display:inline-flex;align-items:center;gap:7px;background:var(--alerta-bg);
+    border:1px solid #EEE3CC;color:var(--alerta);font-family:var(--sans);font-size:13px;
+    font-weight:600;cursor:pointer;padding:8px 13px;border-radius:100px;transition:.2s;white-space:nowrap;
+  }
+  .pausar-btn:hover{box-shadow:var(--sombra)}
+  .pausar-btn svg{width:15px;height:15px}
+
+  /* HOME */
+  .eyebrow{font-size:12.5px;letter-spacing:.22em;text-transform:uppercase;color:var(--dourado);font-weight:600;margin-top:34px}
+  .home-title{font-family:var(--serif);font-weight:400;font-size:clamp(31px,8.5vw,42px);line-height:1.12;color:var(--marinho);margin-top:12px;letter-spacing:-.01em}
+  .home-sub{font-size:14px;color:var(--tinta-tenue);margin-top:10px;font-weight:500;letter-spacing:.02em}
+  .home-desc{color:var(--tinta-suave);font-size:16.5px;font-weight:300;margin-top:18px;max-width:46ch}
+  .home-desc strong{font-weight:500;color:var(--tinta)}
+
+  .mode-pill{
+    display:inline-flex;align-items:center;gap:9px;margin-top:26px;flex-wrap:wrap;
+    padding:8px 15px 8px 12px;border-radius:100px;background:var(--papel-card);
+    border:1px solid var(--linha);box-shadow:var(--sombra);font-size:14px;color:var(--tinta-suave);
+  }
+  .mode-pill .dot{width:9px;height:9px;border-radius:50%;background:var(--dourado);flex:0 0 auto}
+  .mode-pill b{color:var(--marinho);font-weight:600}
+  .mode-pill button{background:none;border:none;color:var(--tinta-tenue);font-family:var(--sans);font-size:13px;cursor:pointer;margin-left:2px;padding:2px 4px;border-radius:6px;text-decoration:underline;text-underline-offset:2px;transition:color .2s}
+  .mode-pill button:hover{color:var(--marinho)}
+
+  /* preparo */
+  .prep{margin-top:30px;padding:22px 22px;border-radius:var(--raio);background:var(--papel-card);border:1px solid var(--linha);box-shadow:var(--sombra)}
+  .prep h3{font-size:12.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--tinta-tenue);font-weight:600}
+  .prep ul{list-style:none;margin-top:14px;display:flex;flex-direction:column;gap:11px}
+  .prep li{display:flex;align-items:flex-start;gap:12px;font-size:15px;color:var(--tinta)}
+  .prep li svg{width:18px;height:18px;flex:0 0 auto;color:var(--dourado);margin-top:2px}
+
+  .progress-block{margin-top:30px}
+  .progress-head{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:12px}
+  .progress-label{font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--tinta-tenue);font-weight:600}
+  .progress-count{font-family:var(--serif);font-size:15px;color:var(--marinho)}
+  .progress-count b{font-size:20px}
+  .track{height:6px;border-radius:100px;background:var(--azul-lavado);overflow:hidden}
+  .track-fill{height:100%;border-radius:100px;background:linear-gradient(90deg,var(--marinho),var(--dourado));width:0;transition:width .7s cubic-bezier(.16,1,.3,1)}
+
+  .cta{
+    display:flex;align-items:center;justify-content:center;gap:10px;width:100%;margin-top:30px;
+    padding:17px 22px;border:none;cursor:pointer;background:var(--marinho);color:#fff;border-radius:var(--raio);
+    font-family:var(--sans);font-size:16px;font-weight:500;letter-spacing:.01em;
+    box-shadow:0 10px 26px rgba(7,58,89,.22);transition:transform .18s,box-shadow .25s;
+  }
+  .cta:hover{transform:translateY(-1px);box-shadow:0 14px 32px rgba(7,58,89,.28)}
+  .cta:active{transform:translateY(0)}
+  .cta svg{width:18px;height:18px}
+  .cta:disabled{opacity:.45;cursor:not-allowed;box-shadow:none;transform:none}
+  .cta.ghost{background:var(--papel-card);color:var(--marinho);border:1px solid var(--linha);box-shadow:var(--sombra);margin-top:12px}
+  .cta.ghost:hover{box-shadow:var(--sombra-forte)}
+
+  .steps-label{font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--tinta-tenue);font-weight:600;margin:40px 0 14px}
+  .steps{list-style:none;display:flex;flex-direction:column;gap:10px}
+  .step-card{
+    display:flex;align-items:center;gap:15px;width:100%;padding:16px;border-radius:var(--raio);cursor:pointer;
+    background:var(--papel-card);border:1px solid var(--linha);box-shadow:var(--sombra);text-align:left;
+    font-family:var(--sans);transition:transform .18s,box-shadow .25s,border-color .25s,opacity .3s;
+  }
+  .step-card:hover:not(:disabled){transform:translateY(-1px);box-shadow:var(--sombra-forte);border-color:var(--azul-claro)}
+  .step-card:active:not(:disabled){transform:translateY(0)}
+  .step-card:disabled{cursor:not-allowed;opacity:.55}
+  .step-card.current{border-color:var(--dourado);box-shadow:0 2px 6px rgba(198,161,91,.12),0 16px 40px rgba(198,161,91,.14)}
+  .marker{flex:0 0 40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-family:var(--serif);font-size:16px;font-weight:500;background:var(--azul-lavado);color:var(--marinho);transition:.25s}
+  .step-card.done .marker{background:var(--marinho);color:#fff}
+  .step-card.current .marker{background:var(--dourado);color:#fff}
+  .marker svg{width:18px;height:18px}
+  .step-body{flex:1;min-width:0}
+  .step-name{font-size:16px;font-weight:500;color:var(--tinta);line-height:1.3}
+  .step-meta{font-size:13px;color:var(--tinta-tenue);margin-top:2px}
+  .step-status{margin-left:auto;font-size:12.5px;font-weight:600;letter-spacing:.02em;white-space:nowrap}
+  .step-card.current .step-status{color:var(--dourado)}
+  .step-card.done .step-status{color:var(--tinta-tenue)}
+  .lock{flex:0 0 auto;color:var(--tinta-tenue);opacity:.6}
+  .lock svg{width:16px;height:16px;display:block}
+
+  .foot{margin-top:44px;padding-top:22px;border-top:1px solid var(--linha);font-size:13px;color:var(--tinta-tenue);font-weight:300;line-height:1.6}
+  .foot b{color:var(--tinta-suave);font-weight:600}
+
+  /* MODO */
+  .mode-intro{text-align:center;margin-top:40px}
+  .mode-intro .eyebrow{margin-top:0}
+  .mode-intro h2{font-family:var(--serif);font-weight:400;font-size:28px;color:var(--marinho);margin-top:12px;line-height:1.18}
+  .mode-intro p{color:var(--tinta-suave);font-size:15.5px;font-weight:300;margin-top:12px}
+  .mode-list{display:flex;flex-direction:column;gap:14px;margin-top:30px}
+  .mode-opt{
+    text-align:left;cursor:pointer;font-family:var(--sans);padding:22px;border-radius:var(--raio);
+    background:var(--papel-card);border:1px solid var(--linha);box-shadow:var(--sombra);
+    transition:transform .18s,box-shadow .25s,border-color .25s;position:relative;overflow:hidden;width:100%;
+  }
+  .mode-opt::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--dourado);opacity:0;transition:opacity .25s}
+  .mode-opt:hover{transform:translateY(-2px);box-shadow:var(--sombra-forte);border-color:var(--azul-claro)}
+  .mode-opt:hover::before{opacity:1}
+  .mode-opt:active{transform:translateY(0)}
+  .mode-opt h3{font-family:var(--serif);font-weight:500;font-size:21px;color:var(--marinho)}
+  .mode-opt p{color:var(--tinta-suave);font-size:14.5px;font-weight:300;margin-top:6px}
+  .mode-opt .go{display:inline-flex;align-items:center;gap:6px;margin-top:14px;font-size:14px;font-weight:600;color:var(--dourado)}
+  .mode-opt .go svg{width:15px;height:15px}
+
+  /* ETAPA */
+  .step-nav{display:flex;align-items:center;justify-content:space-between;padding:22px 0 6px;gap:10px}
+  .step-index{font-family:var(--serif);font-size:14px;color:var(--tinta-tenue);letter-spacing:.08em}
+  .step-index b{color:var(--marinho)}
+  .etapa-eyebrow{font-size:12.5px;letter-spacing:.22em;text-transform:uppercase;color:var(--dourado);font-weight:600;margin-top:26px}
+  .etapa-title{font-family:var(--serif);font-weight:400;font-size:clamp(28px,7.5vw,36px);line-height:1.14;color:var(--marinho);margin-top:10px;letter-spacing:-.01em}
+  .etapa-desc{color:var(--tinta-suave);font-size:16.5px;font-weight:300;margin-top:16px}
+
+  .bloco{margin-top:26px;padding:20px 22px;border-radius:var(--raio);border:1px solid var(--linha)}
+  .bloco .tag{font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;font-weight:600}
+  .bloco.antes{background:linear-gradient(180deg,var(--azul-lavado),#fff)}
+  .bloco.antes .tag{color:var(--marinho);opacity:.8}
+  .bloco.antes p{font-family:var(--serif);font-size:18px;line-height:1.5;color:var(--tinta);margin-top:8px}
+  .bloco.roteiro{background:var(--papel-card);box-shadow:var(--sombra)}
+  .bloco.roteiro .tag{color:var(--tinta-tenue)}
+  .bloco.roteiro ol{margin:12px 0 0 0;padding-left:20px;display:flex;flex-direction:column;gap:8px}
+  .bloco.roteiro li{font-size:15px;color:var(--tinta);padding-left:4px}
+  .bloco.roteiro li::marker{color:var(--dourado);font-family:var(--serif)}
+  .bloco.depois{background:linear-gradient(180deg,#FBF7EE,#fff)}
+  .bloco.depois .tag{color:var(--dourado)}
+  .bloco.depois p{font-family:var(--serif);font-size:18px;line-height:1.5;color:var(--tinta);margin-top:8px}
+
+  .cuidado{margin-top:22px;padding:16px 18px;border-radius:14px;background:var(--alerta-bg);border:1px solid #EEE3CC;display:flex;gap:13px;align-items:flex-start}
+  .cuidado svg{width:19px;height:19px;flex:0 0 auto;color:var(--alerta);margin-top:2px}
+  .cuidado .c-body .tag{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--alerta);font-weight:700}
+  .cuidado .c-body p{font-size:14px;color:#6B5526;margin-top:4px;line-height:1.5}
+
+  .reflexao{margin-top:22px;padding:20px 22px;border-radius:var(--raio);border:1px dashed var(--azul-claro);background:rgba(234,241,245,.4)}
+  .reflexao .tag{font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--marinho);opacity:.75;font-weight:600}
+  .reflexao ul{list-style:none;margin-top:12px;display:flex;flex-direction:column;gap:12px}
+  .reflexao li{font-family:var(--serif);font-size:16px;font-style:italic;color:var(--tinta-suave);line-height:1.45;padding-left:16px;border-left:2px solid var(--azul-claro)}
+
+  /* player */
+  .player{margin-top:26px;padding:26px 24px 24px;border-radius:22px;background:var(--marinho);color:#fff;box-shadow:var(--sombra-forte);position:relative;overflow:hidden}
+  .player::after{content:"";position:absolute;right:-40px;top:-40px;width:180px;height:180px;background:radial-gradient(circle,rgba(198,161,91,.28),transparent 70%);pointer-events:none}
+  .player-label{font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--dourado-claro);font-weight:600}
+  .player-name{font-family:var(--serif);font-size:19px;margin-top:5px;font-weight:400}
+  .visualizer{display:flex;align-items:flex-end;gap:3px;height:34px;margin-top:20px}
+  .visualizer i{flex:1;background:rgba(207,222,231,.35);border-radius:3px;height:20%;transition:height .12s ease}
+  .visualizer.playing i{animation:bar 1s ease-in-out infinite}
+  @keyframes bar{0%,100%{height:22%}50%{height:90%}}
+  .scrub{margin-top:18px}
+  .bar{height:5px;border-radius:100px;background:rgba(255,255,255,.18);cursor:pointer;position:relative}
+  .bar-fill{height:100%;border-radius:100px;background:linear-gradient(90deg,var(--azul-claro),var(--dourado));width:0}
+  .bar-knob{position:absolute;top:50%;width:13px;height:13px;border-radius:50%;background:#fff;transform:translate(-50%,-50%);box-shadow:0 2px 6px rgba(0,0,0,.25);left:0}
+  .times{display:flex;justify-content:space-between;margin-top:9px;font-size:12.5px;color:rgba(255,255,255,.7);font-variant-numeric:tabular-nums}
+  .controls{display:flex;align-items:center;justify-content:center;gap:26px;margin-top:18px}
+  .ctrl{background:none;border:none;color:#fff;cursor:pointer;opacity:.8;transition:.2s;padding:6px}
+  .ctrl:hover{opacity:1}
+  .ctrl svg{width:24px;height:24px;display:block}
+  .play-btn{width:64px;height:64px;border-radius:50%;border:none;cursor:pointer;background:linear-gradient(150deg,#fff,var(--azul-claro));color:var(--marinho);display:flex;align-items:center;justify-content:center;box-shadow:0 8px 22px rgba(0,0,0,.25);transition:transform .18s}
+  .play-btn:hover{transform:scale(1.05)}
+  .play-btn:active{transform:scale(.97)}
+  .play-btn svg{width:26px;height:26px;margin-left:2px}
+  .play-btn.playing svg{margin-left:0}
+  .player-note{font-size:11.5px;color:rgba(207,222,231,.6);margin-top:16px;text-align:center;font-style:italic}
+
+  .etapa-actions{margin-top:28px;display:flex;flex-direction:column;gap:12px}
+  .back-row{display:flex;justify-content:center;margin-top:18px}
+  .done-flag{display:inline-flex;align-items:center;gap:8px;margin-top:8px;padding:10px 16px;border-radius:100px;background:var(--azul-lavado);color:var(--marinho);font-size:14px;font-weight:500}
+  .done-flag svg{width:16px;height:16px}
+
+  /* checkbox de escolha */
+  .choice-wrap{margin-top:26px}
+  .choice-check{display:flex;align-items:center;gap:13px;padding:16px 18px;border-radius:var(--raio);background:var(--papel-card);border:1px solid var(--linha);box-shadow:var(--sombra);cursor:pointer;user-select:none;transition:.2s}
+  .choice-check:hover{border-color:var(--azul-claro)}
+  .choice-check.on{border-color:var(--dourado);background:linear-gradient(180deg,#FBF7EE,#fff)}
+  .box{flex:0 0 26px;height:26px;border-radius:8px;border:2px solid var(--tinta-tenue);display:flex;align-items:center;justify-content:center;transition:.2s;color:#fff}
+  .choice-check.on .box{background:var(--dourado);border-color:var(--dourado)}
+  .box svg{width:15px;height:15px;opacity:0;transition:opacity .2s}
+  .choice-check.on .box svg{opacity:1}
+  .choice-check span{font-size:15.5px;color:var(--tinta);font-weight:500}
+
+  /* submodo gratidão */
+  .sub-list{display:flex;flex-direction:column;gap:12px;margin-top:26px}
+  .sub-opt{text-align:left;cursor:pointer;font-family:var(--sans);padding:18px 20px;border-radius:var(--raio);background:var(--papel-card);border:1px solid var(--linha);box-shadow:var(--sombra);transition:.2s;width:100%}
+  .sub-opt:hover{transform:translateY(-1px);box-shadow:var(--sombra-forte);border-color:var(--azul-claro)}
+  .sub-opt h4{font-family:var(--serif);font-size:18px;color:var(--marinho);font-weight:500}
+  .sub-opt p{font-size:14px;color:var(--tinta-suave);font-weight:300;margin-top:5px}
+
+  /* pausar (overlay) */
+  .overlay{position:fixed;inset:0;z-index:60;background:rgba(43,57,68,.5);backdrop-filter:blur(4px);display:none;align-items:flex-end;justify-content:center;padding:16px;padding-bottom:calc(16px + env(safe-area-inset-bottom))}
+  .overlay.show{display:flex;animation:fade .25s both}
+  @keyframes fade{from{opacity:0}to{opacity:1}}
+  .sheet{background:var(--papel);border-radius:24px;max-width:520px;width:100%;padding:28px 24px calc(24px + env(safe-area-inset-bottom));box-shadow:0 -10px 50px rgba(0,0,0,.25);animation:sheet .3s cubic-bezier(.16,1,.3,1) both;max-height:88vh;overflow-y:auto}
+  @keyframes sheet{from{transform:translateY(40px);opacity:.4}to{transform:none;opacity:1}}
+  .sheet h3{font-family:var(--serif);font-size:23px;color:var(--marinho);font-weight:500}
+  .sheet .lead{color:var(--tinta-suave);font-size:15px;margin-top:8px;font-weight:300}
+  .sheet h4{font-size:12.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--alerta);font-weight:700;margin-top:22px}
+  .sheet ul{list-style:none;margin-top:10px;display:flex;flex-direction:column;gap:8px}
+  .sheet ul li{font-size:14.5px;color:var(--tinta);padding-left:18px;position:relative;line-height:1.45}
+  .sheet ul li::before{content:"";position:absolute;left:0;top:9px;width:6px;height:6px;border-radius:50%;background:var(--dourado)}
+  .protecao{margin-top:22px;padding:18px 20px;border-radius:16px;background:var(--marinho);color:#fff}
+  .protecao .tag{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--dourado-claro);font-weight:700}
+  .protecao p{font-family:var(--serif);font-size:18px;line-height:1.45;margin-top:8px}
+  .urg{margin-top:18px;padding:16px 18px;border-radius:14px;border:1px dashed var(--tinta-tenue);background:#fff}
+  .urg .tag{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--tinta-tenue);font-weight:700}
+  .urg p{font-size:14px;color:var(--tinta-suave);margin-top:6px;line-height:1.5}
+  .sheet .close{margin-top:22px}
+
+  /* toast */
+  .toast{position:fixed;left:50%;bottom:calc(26px + env(safe-area-inset-bottom));transform:translateX(-50%) translateY(24px);background:var(--marinho);color:#fff;padding:13px 20px;border-radius:100px;font-size:14.5px;font-weight:500;box-shadow:var(--sombra-forte);z-index:70;opacity:0;pointer-events:none;transition:opacity .35s,transform .35s;display:flex;align-items:center;gap:9px;max-width:90vw}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  .toast svg{width:17px;height:17px;color:var(--dourado-claro)}
+
+  /* conclusão */
+  .celebrate{text-align:center;padding-top:20px}
+  .seal{width:78px;height:78px;margin:36px auto 0;border-radius:50%;background:linear-gradient(150deg,var(--marinho),var(--marinho-suave));display:flex;align-items:center;justify-content:center;box-shadow:0 14px 34px rgba(7,58,89,.24);position:relative}
+  .seal::after{content:"";position:absolute;inset:-6px;border-radius:50%;border:1px solid var(--dourado);opacity:.5}
+  .seal svg{width:34px;height:34px;color:var(--dourado-claro)}
+  .celebrate h2{font-family:var(--serif);font-weight:400;font-size:30px;color:var(--marinho);margin-top:24px}
+  .celebrate p{color:var(--tinta-suave);font-size:16px;font-weight:300;margin-top:12px;max-width:42ch;margin-left:auto;margin-right:auto}
+  .para-levar{margin-top:26px;padding:20px 22px;border-radius:var(--raio);background:linear-gradient(180deg,#FBF7EE,#fff);border:1px solid var(--linha);text-align:left}
+  .para-levar .tag{font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--dourado);font-weight:600}
+  .para-levar p{font-family:var(--serif);font-size:17px;color:var(--tinta);margin-top:8px;font-weight:400;max-width:none}
+
+  @media (min-width:600px){.app{padding-left:32px;padding-right:32px}}
+</style>
+</head>
+<body>
+<div class="app" id="app"></div>
+
+<div class="overlay" id="overlay">
+  <div class="sheet" id="sheet"></div>
+</div>
+
+<div class="toast" id="toast"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span id="toast-txt"></span></div>
+
+<script>
+/* =====================================================================
+   DADOS DO PROTOCOLO IPS — toda a interface é gerada a partir daqui.
+   Base: ebook "Intervenção Psiquiátrica Somatopsíquica (IPS)",
+   Dra. Renata Guerra / PROMEV 2026.
+   Para trocar textos, áudios, durações ou nº de etapas, edite só isto.
+   ===================================================================== */
+const PROTOCOLO = {
+  titulo:"Intervenção Psiquiátrica Somatopsíquica",
+  sigla:"IPS®",
+  subtitulo:"Guia de continuidade · PROMEV",
+  descricao:"Uma sequência de sete passos em áudio para retornar ao corpo, reconhecer sinais internos e escolher pequenos movimentos de cuidado. Este é um guia para continuar a prática após o protocolo presencial. Ele não substitui o acompanhamento médico ou psicoterápico em andamento.",
+  preparo:[
+    { icone:"clock", texto:"cerca de 30 a 40 minutos sem interrupções" },
+    { icone:"leaf",  texto:"um ambiente calmo e seguro, onde você tenha privacidade" },
+    { icone:"shirt", texto:"roupas confortáveis, que permitam movimento" },
+    { icone:"pen",   texto:"papel e lápis por perto, para anotar o essencial" }
+  ],
+  // Regra de ouro e frase de proteção (usadas na entrada e no painel "quando pausar")
+  regraOuro:"Você não precisa ir mais fundo do que consegue sustentar. Profundidade sem segurança não é integração. Segurança também é caminho.",
+  fraseProtecao:"Eu posso ir devagar. Eu posso pausar. Eu posso pedir ajuda. Meu processo não precisa ser perfeito para ser verdadeiro.",
+
+  modos:{
+    transformacao:{
+      nome:"Transformação",
+      descricao:"Para atravessar e ressignificar uma emoção, pensamento, crença, comportamento ou padrão corporal.",
+      // etapa de escolha travada, sem áudio
+      escolha:{
+        titulo:"Escolha o que deseja transformar",
+        texto:"Antes de começar, escolha uma questão de intensidade tolerável para observar hoje. Pode ser uma emoção, um pensamento, uma crença, um comportamento ou um padrão corporal. Para temas traumáticos ou muito ativadores, a orientação é praticar apenas com acompanhamento profissional.",
+        confirmar:"Escolhi o que quero transformar"
+      }
+    },
+    gratidao:{
+      nome:"Gratidão e celebração",
+      descricao:"Para ancorar e ampliar uma experiência boa, transformando-a em um recurso interno mais duradouro.",
+      // primeiro escolhe o submodo, depois confirma a escolha
+      submodos:[
+        { id:"puro",     nome:"Modo puro",       texto:"Olhar para o percurso e permitir gratidão por tudo que fez parte dele: presença, entrega, coragem, os passos dados." },
+        { id:"pescaria", nome:"Modo pescaria",   texto:"Diante de um conflito, pescar algo pelo qual é possível se sentir grato: um aprendizado, um crescimento, uma ampliação do olhar." },
+        { id:"comose",   nome:"Modo como se",    texto:"Entrar em contato com a gratidão como se aquilo que você deseja já tivesse se concretizado." }
+      ],
+      escolha:{
+        titulo:"Escolha pelo que se sente grato",
+        // texto varia conforme o submodo escolhido
+        texto:{
+          puro:"Você escolheu o caminho da gratidão, no modo puro. Olhe para o percurso e deixe vir aquilo pelo que deseja agradecer em tudo que fez parte dele: a presença, a entrega, a coragem, os passos que você deu.",
+          pescaria:"Você escolheu o caminho da gratidão, no modo pescaria. Traga à mente um conflito ou uma dificuldade e, dentro dele, pesque algo pelo que possa se sentir grato: um aprendizado, um crescimento, uma ampliação do olhar.",
+          comose:"Você escolheu o caminho da gratidão, no modo como se. Escolha algo que você deseja e entre em contato com a gratidão como se aquilo já tivesse se concretizado."
+        },
+        confirmar:"Escolhi o que quero celebrar"
+      }
+    }
+  },
+
+  /* As sete etapas. Campos que variam por modo usam { transformacao, gratidao }.
+     Onde o campo é uma string única, vale para os dois modos. */
+  etapas:[
+    {
+      id:"grounding",
+      titulo:"Presença e enraizamento",
+      subtitulo:"grounding",
+      descricao:"Voltar ao corpo, aos pés, ao chão e ao momento presente antes de começar. Práticas de enraizamento são o solo seguro sobre o qual todo o restante acontece.",
+      instrucaoAntes:"Fique em pé, com os dois pés paralelos em contato com o chão e os joelhos levemente flexionados. Se preferir, use fones de ouvido.",
+      roteiro:[
+        "Perceba o peso do corpo descendo em direção ao solo.",
+        "Observe três pontos de contato: os pés, o apoio do corpo e a respiração.",
+        "Suba lentamente e faça um pequeno arco para trás; depois volte descendo.",
+        "Finalize em pé, sentindo novamente o contato dos pés com o chão."
+      ],
+      instrucaoDepois:"Note que partes do corpo ficaram mais presentes, e se havia alguma tensão que você ainda não tinha percebido.",
+      cuidado:"Não force a respiração. Respire apenas um pouco mais do que o habitual. O objetivo é retornar ao presente, não controlar o ar.",
+      reflexao:["Que partes do corpo ficaram mais presentes?","Havia alguma tensão que eu não tinha percebido?","Qual palavra descreve meu estado agora?"],
+      duracao:"5:10",
+      audio:{ transformacao:"audios/transformacao/1-grounding.mp3", gratidao:"audios/gratidao/1-grounding.mp3" }
+    },
+    {
+      id:"mapeamento",
+      titulo:{ transformacao:"Mapeamento somatopsíquico", gratidao:"Mapeamento da gratidão" },
+      descricao:{
+        transformacao:"Observar como a questão escolhida aparece no corpo. Começa de modo superficial, percorrendo o corpo de cima a baixo, e depois pode se aprofundar em uma sensação específica.",
+        gratidao:"Conectar-se com a gratidão no modo escolhido e perceber onde e como ela aparece no corpo: em que região, com que qualidade, com que abertura."
+      },
+      instrucaoAntes:"Faça o grounding primeiro e perceba os pés no chão. Deixe que a primeira sensação venha sem forçar. Não há resposta certa.",
+      roteiro:{
+        transformacao:[
+          "Percorra o corpo com atenção, de cima para baixo e de baixo para cima.",
+          "Perceba áreas de tensão, peso, temperatura, vazio, pressão ou expansão.",
+          "Pergunte em silêncio: onde isso aparece no corpo?",
+          "Caracterize a sensação: localização, cor, forma, textura, temperatura, movimento ou som.",
+          "Permaneça alguns instantes apenas conhecendo a sensação, sem brigar com ela."
+        ],
+        gratidao:[
+          "Faça o grounding e traga à mente aquilo que escolheu celebrar.",
+          "Percorra o corpo e perceba onde a gratidão se faz sentir.",
+          "Caracterize essa sensação: localização, qualidade, temperatura, movimento.",
+          "Permaneça um tempo apenas acompanhando como a gratidão habita o corpo."
+        ]
+      },
+      instrucaoDepois:"Se algo ficou mais nítido, apenas registre mentalmente. Você voltará a isso adiante.",
+      cuidado:"Comece com questões de intensidade leve ou moderada. Para temas traumáticos ou muito ativadores, pratique apenas com acompanhamento profissional.",
+      reflexao:["Onde apareceu no corpo?","Como era a sensação: cor, forma, temperatura, textura ou som?","O que mudou depois de alguns minutos de observação?"],
+      duracao:"7:45",
+      audio:{ transformacao:"audios/transformacao/2-mapeamento.mp3", gratidao:"audios/gratidao/2-mapeamento.mp3" }
+    },
+    {
+      id:"agencia",
+      titulo:{ transformacao:"Agência somatopsíquica", gratidao:"Dança celebrativa" },
+      descricao:{
+        transformacao:"Reconhecer que o corpo pode participar da transformação por meio de movimentos, posições, gestos, sons ou vibração. A escuta em movimento, não a pressa por resolver.",
+        gratidao:"Permitir que o corpo expresse a gratidão em movimento: uma dança celebrativa, que pode ser pequena e silenciosa ou ampla e expressiva."
+      },
+      instrucaoAntes:{
+        transformacao:"Depois de mapear a sensação, pergunte ao corpo que movimento ele gostaria de fazer para cuidar disso. Volte a atenção para os pés sempre que precisar.",
+        gratidao:"Deixe que a gratidão que você mapeou encontre uma forma de se mover. Não precisa haver plateia nem coreografia."
+      },
+      roteiro:{
+        transformacao:[
+          "Permita um movimento pequeno, lento e seguro.",
+          "Observe se há vontade de alongar, recuar, empurrar, abrir, fechar, sacudir, vibrar ou emitir som.",
+          "Use som se ele ajudar a expressão.",
+          "Repita apenas enquanto houver sensação de cuidado e presença.",
+          "Não fique congelado tentando acertar: a prática é escuta em movimento."
+        ],
+        gratidao:[
+          "Permita um movimento celebrativo, no tamanho que for verdadeiro para você.",
+          "Pode ser um gesto discreto de reconhecimento ou uma expressão mais ampla.",
+          "Use som ou respiração, se ajudarem a celebrar.",
+          "Deixe o movimento acontecer enquanto houver alegria ou reconhecimento presente."
+        ]
+      },
+      instrucaoDepois:"Quando sentir que é suficiente, pare. O próximo passo será observar o que mudou.",
+      cuidado:"O movimento deve ser seguro para o seu corpo físico. Evite movimentos bruscos, dor, hiperventilação ou práticas que aumentem a desorganização.",
+      reflexao:["Quando entro em contato antes de agir, o que percebo de diferente?","Que movimentos costumam me regular?","Qual pequena ação concreta posso escolher hoje?"],
+      duracao:"6:20",
+      audio:{ transformacao:"audios/transformacao/3-agencia.mp3", gratidao:"audios/gratidao/3-danca.mp3" }
+    },
+    {
+      id:"remapeamento",
+      titulo:{ transformacao:"Remapeamento somatopsíquico", gratidao:"Remapeamento da celebração" },
+      descricao:{
+        transformacao:"Uma nova observação do corpo depois do movimento. O que mudou na sensação, na emoção e na percepção?",
+        gratidao:"Observar como o corpo mudou depois da vivência da celebração. Que espaço novo se abriu?"
+      },
+      instrucaoAntes:"Pare o movimento e volte a uma postura tranquila. Deixe que a sensação se recomponha por conta própria, sem empurrar.",
+      roteiro:[
+        "Percorra novamente o corpo, com a mesma atenção de antes.",
+        "Perceba se algo mudou de lugar, de tamanho, de temperatura ou de cor.",
+        "Não avalie se mudou pouco ou muito. Apenas observe o que está aqui agora."
+      ],
+      instrucaoDepois:"Guarde a diferença que percebeu, mesmo que seja sutil.",
+      cuidado:"Se a comparação virar cobrança, solte-a. Nem toda prática produz mudança visível, e isso também é uma informação válida.",
+      reflexao:["O que mudou no corpo depois do movimento?","A sensação inicial está diferente agora?"],
+      duracao:"5:30",
+      audio:{ transformacao:"audios/transformacao/4-remapeamento.mp3", gratidao:"audios/gratidao/4-remapeamento.mp3" }
+    },
+    {
+      id:"insight",
+      titulo:"Insight",
+      descricao:"Depois do contato corporal e do movimento, abrir-se para receber uma palavra, frase ou imagem que ajude a compreender. O objetivo não é fabricar respostas, e sim criar condições de receptividade.",
+      instrucaoAntes:"Leve a atenção para a região do coração, o centro do peito, e respire de forma natural.",
+      roteiro:[
+        "Conecte-se com aquilo que você considera sagrado; se não fizer sentido, conecte-se com a sua própria sabedoria interna.",
+        "Numa postura interna de receptividade, aguarde uma palavra, frase ou imagem, sem esforço.",
+        "Anote o que veio, mesmo que pareça simples.",
+        "Se nada aparecer, respeite. O silêncio também é uma resposta."
+      ],
+      instrucaoDepois:"Se uma frase resumir o que você percebeu, guarde essa frase.",
+      cuidado:"Não use o insight para tomar decisões impulsivas. Integre-o com discernimento, com a realidade concreta e, quando necessário, com orientação profissional.",
+      reflexao:["Qual palavra, frase ou imagem apareceu?","O que isso tem relação com minha história ou meu momento atual?","Que escolha mais cuidadosa esse insight pode apoiar?"],
+      duracao:"5:55",
+      audio:{ transformacao:"audios/transformacao/5-insight.mp3", gratidao:"audios/gratidao/5-insight.mp3" }
+    },
+    {
+      id:"atencao-plena",
+      titulo:"Atenção plena",
+      descricao:"Sentar em silêncio e deixar a experiência reverberar, sem tentar organizar tudo. As três chaves são relaxamento, observação e não julgamento.",
+      instrucaoAntes:"Nesta etapa não há nada a resolver. Sente-se de forma confortável e apenas acompanhe o áudio.",
+      roteiro:[
+        "Observe respiração, corpo, emoções e pensamentos sem tentar arrumá-los.",
+        "Deixe a palavra, frase ou imagem do insight reverberar.",
+        "Se a atenção se dispersar, volte gentilmente, sem se cobrar.",
+        "Permaneça no espaço de observação por alguns minutos."
+      ],
+      instrucaoDepois:"Permaneça alguns instantes em silêncio antes de encerrar.",
+      cuidado:"Silêncio não precisa ser ausência de pensamento. É um espaço de observação, não uma prova a passar.",
+      reflexao:["O que ficou mais claro para mim?","Que parte ainda precisa de tempo?"],
+      duracao:"6:40",
+      audio:{ transformacao:"audios/transformacao/6-atencao-plena.mp3", gratidao:"audios/gratidao/6-atencao-plena.mp3" }
+    },
+    {
+      id:"fechamento",
+      titulo:"Fechamento",
+      descricao:"Integrar a prática. A pergunta central é: o que isso tem relação com a minha história, o meu momento e as minhas escolhas?",
+      instrucaoAntes:"Esta é a última etapa. Não há pressa para levantar quando terminar.",
+      roteiro:[
+        "Pergunte-se: o que isso me mostra sobre a minha história e o meu momento atual?",
+        "Deixe a experiência se transformar em um pequeno discernimento prático.",
+        "Finalize agradecendo por um aspecto da prática, mesmo que tenha sido difícil.",
+        "Quando estiver pronto, volte a atenção ao ambiente ao redor."
+      ],
+      instrucaoDepois:"Anote uma frase final e escolha um pequeno gesto de cuidado para o seu dia.",
+      cuidado:"Talvez a mudança não seja perfeição, e sim totalidade: incluir corpo, emoção, limites e escolhas com presença.",
+      reflexao:["O que ficou mais claro para mim?","Qual será meu próximo pequeno passo?"],
+      duracao:"4:30",
+      audio:{ transformacao:"audios/transformacao/7-fechamento.mp3", gratidao:"audios/gratidao/7-fechamento.mp3" }
+    }
+  ],
+
+  // Painel "quando pausar" — retirado da seção 16 do ebook
+  pausar:{
+    lead:"Autocuidado também é reconhecer limites. Pausar não é fracassar. Pausar pode ser um ato de agência e de proteção.",
+    pause:[
+      "Desconforto intenso ou sensação de perda de controle.",
+      "Tontura, falta de ar, dor ou mal-estar físico.",
+      "Sensação de estar fora do corpo ou desconectado do ambiente.",
+      "Memórias muito vívidas ou invasivas.",
+      "Impulso de se machucar ou machucar alguém.",
+      "Piora importante de ansiedade, pânico, irritabilidade ou insônia."
+    ],
+    ajuda:[
+      "Os sintomas persistirem ou piorarem.",
+      "Você estiver em crise emocional ou houver risco para a sua segurança.",
+      "Você tiver dúvida sobre medicações, diagnóstico ou plano terapêutico.",
+      "Você desejar trabalhar temas intensos com mais profundidade."
+    ]
+  }
+};
+
+/* helper: campo que pode variar por modo */
+function pick(v, modo){ return (v && typeof v==="object" && !Array.isArray(v)) ? v[modo] : v; }
+
+/* =====================================================================
+   ESTADO (localStorage)
+   ===================================================================== */
+const KEY="ips_protocolo_v2";
+function load(){ try{return JSON.parse(localStorage.getItem(KEY))||{}}catch(e){return {}} }
+function save(s){ try{localStorage.setItem(KEY,JSON.stringify(s))}catch(e){} }
+let state=load(); // { modo, submodo, escolhaFeita, concluidas:[], }
+if(!state.concluidas) state.concluidas=[];
+
+const total=PROTOCOLO.etapas.length;
+function doneCount(){ return PROTOCOLO.etapas.filter(e=>state.concluidas.includes(e.id)).length }
+function isDone(i){ return state.concluidas.includes(PROTOCOLO.etapas[i].id) }
+function firstOpen(){ for(let i=0;i<total;i++){ if(!isDone(i)) return i } return total }
+function isUnlocked(i){ return i<=firstOpen() }
+function fmt(t){ const m=Math.floor(t/60),s=Math.floor(t%60); return m+":"+String(s).padStart(2,"0") }
+function modoReady(){ // pré-requisitos antes de liberar as etapas
+  if(!state.modo) return false;
+  if(state.modo==="gratidao" && !state.submodo) return false;
+  return !!state.escolhaFeita;
+}
+
+/* =====================================================================
+   ÁUDIO SINTÉTICO — piano calmo (placeholder). Trocar por <audio> real.
+   ===================================================================== */
+let AC=null,playing=false,startAt=0,offset=0,timer=null,curDur=140,nodes=[];
+function ctx(){ if(!AC) AC=new (window.AudioContext||window.webkitAudioContext)(); return AC }
+const notes=[261.63,293.66,329.63,392.00,440.00,493.88,523.25];
+function schedulePiano(from){
+  const ac=ctx();const master=ac.createGain();master.gain.value=0;master.connect(ac.destination);
+  master.gain.linearRampToValueAtTime(0.5,ac.currentTime+1.2);nodes=[master];
+  const step=1.7;const start=ac.currentTime-(from%step);
+  for(let t=0;t<curDur+4;t+=step){
+    const when=start+t;if(when<ac.currentTime)continue;
+    const f=notes[Math.floor(Math.random()*notes.length)]*(Math.random()<0.3?0.5:1);
+    const o=ac.createOscillator(),g=ac.createGain();o.type="triangle";o.frequency.value=f;
+    o.connect(g);g.connect(master);
+    g.gain.setValueAtTime(0,when);g.gain.linearRampToValueAtTime(0.22,when+0.04);
+    g.gain.exponentialRampToValueAtTime(0.001,when+2.4);
+    o.start(when);o.stop(when+2.6);nodes.push(o);
+  }
+}
+function stopPiano(){ nodes.forEach(n=>{try{n.stop?n.stop():n.disconnect()}catch(e){}});nodes=[] }
+function audioPlay(){ const ac=ctx();if(ac.state==="suspended")ac.resume();schedulePiano(offset);startAt=ac.currentTime-offset;playing=true;timer=setInterval(tick,120);tickUI() }
+function audioPause(){ if(AC){offset=AC.currentTime-startAt}playing=false;clearInterval(timer);stopPiano();tickUI() }
+function audioSeek(frac){ offset=Math.max(0,Math.min(curDur,frac*curDur));if(playing){stopPiano();startAt=AC.currentTime-offset;schedulePiano(offset)}tick() }
+function tick(){ if(playing&&AC){offset=AC.currentTime-startAt}if(offset>=curDur){offset=curDur;audioPause()}tickUI() }
+function tickUI(){
+  const fill=document.getElementById("bar-fill"),knob=document.getElementById("bar-knob"),cur=document.getElementById("t-cur"),pb=document.getElementById("play-btn"),viz=document.getElementById("viz");
+  if(!fill)return;const frac=Math.min(1,offset/curDur);
+  fill.style.width=(frac*100)+"%";if(knob)knob.style.left=(frac*100)+"%";
+  if(cur)cur.textContent=fmt(offset);
+  if(pb){pb.classList.toggle("playing",playing);pb.innerHTML=playing?ICON.pause:ICON.play}
+  if(viz)viz.classList.toggle("playing",playing);
+}
+function resetAudio(dur){ audioPause();offset=0;curDur=dur }
+
+/* =====================================================================
+   ÍCONES
+   ===================================================================== */
+const ICON={
+  play:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>',
+  pause:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 5h4v14H6zM14 5h4v14h-4z"/></svg>',
+  check:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>',
+  arrow:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>',
+  back:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>',
+  prev:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h2v12H6zM9.5 12l8.5 6V6z"/></svg>',
+  next:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M16 6h2v12h-2zM6 6l8.5 6L6 18z"/></svg>',
+  lock:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>',
+  shield:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v6c0 4-3 7-7 9-4-2-7-5-7-9V6z"/></svg>',
+  info:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><line x1="12" y1="11" x2="12" y2="16"/><line x1="12" y1="8" x2="12" y2="8"/></svg>',
+  seal:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="9" r="6"/><path d="M9 14l-1.5 7L12 18l4.5 3L15 14"/></svg>',
+  clock:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 16 14"/></svg>',
+  leaf:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 20A7 7 0 0 1 4 13c0-5 4-9 16-9 0 10-5 14-9 14z"/><path d="M11 20c0-6 3-9 7-11"/></svg>',
+  shirt:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3l3 3 3-3 5 3-2 4-2-1v11H8V9L6 10 4 6z"/></svg>',
+  pen:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>'
+};
+
+/* =====================================================================
+   NAVEGAÇÃO
+   ===================================================================== */
+const app=document.getElementById("app");
+function go(html){ app.innerHTML=html;window.scrollTo(0,0) }
+function toast(msg){ const t=document.getElementById("toast");document.getElementById("toast-txt").textContent=msg;t.classList.add("show");setTimeout(()=>t.classList.remove("show"),2200) }
+
+function route(){
+  audioPause();
+  if(!state.modo){ renderMode(); return; }
+  if(state.modo==="gratidao" && !state.submodo){ renderSubmodo(); return; }
+  if(!state.escolhaFeita){ renderEscolha(); return; }
+  renderHome();
+}
+
+/* header reutilizável com botão pausar */
+function header(showPausar){
+  return `<div class="topbar">
+    <div class="brand">Dra. Renata Guerra<span>.</span></div>
+    ${showPausar?`<button class="pausar-btn" onclick="openPausar()">${ICON.shield} Preciso pausar</button>`:''}
+  </div>`;
+}
+
+/* ---------- escolha de modo ---------- */
+function renderMode(){
+  const m=PROTOCOLO.modos;
+  go(`<div class="screen active">
+    ${header(false)}
+    <div class="mode-intro stagger">
+      <div class="eyebrow">Antes de começar</div>
+      <h2 style="animation-delay:.05s">Como você quer<br>percorrer a prática?</h2>
+      <p style="animation-delay:.1s">A sequência dos sete passos é a mesma nos dois caminhos. O que muda é a intenção com que você entra.</p>
+    </div>
+    <div class="mode-list stagger">
+      <button class="mode-opt" style="animation-delay:.15s" onclick="pickMode('transformacao')">
+        <h3>${m.transformacao.nome}</h3><p>${m.transformacao.descricao}</p>
+        <span class="go">Escolher este caminho ${ICON.arrow}</span>
+      </button>
+      <button class="mode-opt" style="animation-delay:.22s" onclick="pickMode('gratidao')">
+        <h3>${m.gratidao.nome}</h3><p>${m.gratidao.descricao}</p>
+        <span class="go">Escolher este caminho ${ICON.arrow}</span>
+      </button>
+    </div>
+    <div class="foot">Este é um guia de continuidade após a prática presencial da <b>IPS®</b>. Ele é material de apoio e não substitui acompanhamento médico ou psicoterápico. Seu progresso é guardado apenas neste dispositivo.</div>
+  </div>`);
+}
+function pickMode(k){
+  state.modo=k; state.submodo=null; state.escolhaFeita=false; save(state);
+  if(k==="gratidao") renderSubmodo(); else renderEscolha();
+}
+
+/* ---------- submodo (só gratidão) ---------- */
+function renderSubmodo(){
+  const subs=PROTOCOLO.modos.gratidao.submodos;
+  go(`<div class="screen active">
+    <div class="step-nav"><button class="link-btn" onclick="backToMode()">${ICON.back} Caminhos</button></div>
+    <div class="mode-intro stagger" style="margin-top:24px">
+      <div class="eyebrow">Gratidão e celebração</div>
+      <h2 style="animation-delay:.05s">De que forma<br>entrar na gratidão?</h2>
+      <p style="animation-delay:.1s">Há três formas de se conectar com a gratidão. Escolha a que faz sentido para hoje.</p>
+    </div>
+    <div class="sub-list stagger">
+      ${subs.map((s,i)=>`<button class="sub-opt" style="animation-delay:${.15+i*.06}s" onclick="pickSub('${s.id}')">
+        <h4>${s.nome}</h4><p>${s.texto}</p>
+      </button>`).join("")}
+    </div>
+  </div>`);
+}
+function pickSub(id){ state.submodo=id; save(state); renderEscolha(); }
+function backToMode(){ state.modo=null;state.submodo=null;state.escolhaFeita=false;save(state);renderMode(); }
+
+/* ---------- tela de escolha (travada, com check) ---------- */
+function renderEscolha(){
+  const modo=PROTOCOLO.modos[state.modo];
+  const esc=modo.escolha;
+  const subLabel = state.modo==="gratidao" && state.submodo
+    ? modo.submodos.find(s=>s.id===state.submodo).nome : null;
+  // texto pode variar por submodo (gratidão) ou ser único (transformação)
+  const escTexto = pick(esc.texto, state.submodo);
+  go(`<div class="screen active">
+    <div class="step-nav">
+      <button class="link-btn" onclick="${state.modo==='gratidao'?'renderSubmodo()':'backToMode()'}">${ICON.back} Voltar</button>
+      <span class="step-index">Preparação</span>
+    </div>
+    <div class="stagger">
+      <div class="etapa-eyebrow">${modo.nome}${subLabel?' · '+subLabel:''}</div>
+      <h1 class="etapa-title" style="animation-delay:.04s">${esc.titulo}</h1>
+      <p class="etapa-desc" style="animation-delay:.08s">${escTexto}</p>
+      <div class="choice-wrap" style="animation-delay:.14s">
+        <div class="choice-check" id="chk" onclick="toggleChoice()">
+          <span class="box">${ICON.check}</span>
+          <span>${esc.confirmar}</span>
+        </div>
+      </div>
+      <button class="cta" id="escolha-cta" style="animation-delay:.2s" disabled onclick="confirmEscolha()">
+        Ir para os sete passos ${ICON.arrow}
+      </button>
+    </div>
+    <div class="foot">Você pode mudar de caminho a qualquer momento pela tela inicial.</div>
+  </div>`);
+}
+let choiceOn=false;
+function toggleChoice(){
+  choiceOn=!choiceOn;
+  document.getElementById("chk").classList.toggle("on",choiceOn);
+  document.getElementById("escolha-cta").disabled=!choiceOn;
+}
+function confirmEscolha(){ if(!choiceOn)return; state.escolhaFeita=true; save(state); choiceOn=false; renderHome(); }
+
+/* ---------- HOME ---------- */
+function renderHome(){
+  const done=doneCount(),frac=done/total,open=firstOpen();
+  const modo=PROTOCOLO.modos[state.modo];
+  const subLabel = state.modo==="gratidao" && state.submodo
+    ? " · "+modo.submodos.find(s=>s.id===state.submodo).nome : "";
+  const continuavel=open<total;
+
+  const stepsHtml=PROTOCOLO.etapas.map((e,i)=>{
+    const d=isDone(i),cur=(i===open),unlocked=isUnlocked(i);
+    const status=d?"Concluído":cur?"Continuar":"";
+    const marker=d?`<span class="marker">${ICON.check}</span>`:`<span class="marker">${i+1}</span>`;
+    const titulo=pick(e.titulo,state.modo);
+    return `<button class="step-card ${d?'done':''} ${cur?'current':''}" ${unlocked?'':'disabled'} onclick="openStep(${i})">
+      ${marker}
+      <span class="step-body"><span class="step-name">${titulo}</span><span class="step-meta">${e.duracao} min</span></span>
+      ${unlocked?`<span class="step-status">${status}</span>`:`<span class="lock">${ICON.lock}</span>`}
+    </button>`;
+  }).join("");
+
+  go(`<div class="screen active">
+    ${header(true)}
+    <div class="stagger">
+      <div class="eyebrow">Protocolo ${PROTOCOLO.sigla}</div>
+      <h1 class="home-title" style="animation-delay:.04s">${PROTOCOLO.titulo}</h1>
+      <div class="home-sub" style="animation-delay:.06s">${PROTOCOLO.subtitulo}</div>
+      <p class="home-desc" style="animation-delay:.08s">${PROTOCOLO.descricao}</p>
+
+      <div class="mode-pill" style="animation-delay:.12s">
+        <span class="dot"></span>Caminho <b>${modo.nome}${subLabel}</b>
+        <button onclick="trocarCaminho()">trocar</button>
+      </div>
+
+      <div class="prep" style="animation-delay:.16s">
+        <h3>Você vai precisar de</h3>
+        <ul>${PROTOCOLO.preparo.map(p=>`<li>${ICON[p.icone]}<span>${p.texto}</span></li>`).join("")}</ul>
+      </div>
+
+      <div class="progress-block" style="animation-delay:.2s">
+        <div class="progress-head"><span class="progress-label">Seu progresso</span><span class="progress-count"><b>${done}</b> de ${total} passos</span></div>
+        <div class="track"><div class="track-fill" id="tf"></div></div>
+      </div>
+
+      ${continuavel
+        ? `<button class="cta" style="animation-delay:.24s" onclick="openStep(${open})">${done>0?'Continuar de onde parei':'Começar o primeiro passo'} ${ICON.arrow}</button>`
+        : `<button class="cta" style="animation-delay:.24s" onclick="renderDone()">Ver o fechamento ${ICON.check}</button>`}
+
+      <div class="steps-label" style="animation-delay:.28s">Os sete passos</div>
+    </div>
+    <ul class="steps">${stepsHtml}</ul>
+
+    <div class="foot">
+      Regra de ouro: ${PROTOCOLO.regraOuro}<br><br>
+      Este guia é material de apoio e não substitui acompanhamento médico ou psicoterápico. Se alguma prática gerar desconforto intenso, interrompa e use o botão <b>Preciso pausar</b>.
+    </div>
+  </div>`);
+  requestAnimationFrame(()=>{const tf=document.getElementById("tf");if(tf)tf.style.width=(frac*100)+"%"});
+}
+function trocarCaminho(){ // mantém progresso; volta à escolha de modo
+  renderMode();
+}
+
+/* ---------- ETAPA ---------- */
+function openStep(i){
+  if(!isUnlocked(i)){ toast("Conclua o passo anterior primeiro"); return; }
+  const e=PROTOCOLO.etapas[i];
+  const p=e.duracao.split(":");const durSec=(+p[0])*60+(+p[1]);
+  resetAudio(durSec);
+  const d=isDone(i);
+  const titulo=pick(e.titulo,state.modo), desc=pick(e.descricao,state.modo),
+        antes=pick(e.instrucaoAntes,state.modo), roteiro=pick(e.roteiro,state.modo),
+        depois=pick(e.instrucaoDepois,state.modo);
+  const modo=PROTOCOLO.modos[state.modo];
+  const subLabel = state.modo==="gratidao" && state.submodo ? " · "+modo.submodos.find(s=>s.id===state.submodo).nome : "";
+
+  go(`<div class="screen active">
+    <div class="step-nav">
+      <button class="link-btn" onclick="renderHome()">${ICON.back} Passos</button>
+      <button class="pausar-btn" onclick="openPausar()">${ICON.shield} Pausar</button>
+    </div>
+    <div class="stagger">
+      <div class="etapa-eyebrow">Passo ${i+1} de ${total} · ${modo.nome}${subLabel}</div>
+      <h1 class="etapa-title" style="animation-delay:.04s">${titulo}${e.subtitulo?` <span style="font-size:.5em;color:var(--tinta-tenue);font-style:italic;font-weight:400">${e.subtitulo}</span>`:''}</h1>
+      <p class="etapa-desc" style="animation-delay:.08s">${desc}</p>
+
+      ${antes?`<div class="bloco antes" style="animation-delay:.12s"><div class="tag">Antes de começar</div><p>${antes}</p></div>`:''}
+
+      <div class="player" style="animation-delay:.16s">
+        <div class="player-label">Áudio guiado</div>
+        <div class="player-name">${titulo}</div>
+        <div class="visualizer" id="viz">${'<i></i>'.repeat(13)}</div>
+        <div class="scrub">
+          <div class="bar" id="bar" onclick="clickBar(event)"><div class="bar-fill" id="bar-fill"></div><div class="bar-knob" id="bar-knob"></div></div>
+          <div class="times"><span id="t-cur">0:00</span><span>${e.duracao}</span></div>
+        </div>
+        <div class="controls">
+          <button class="ctrl" onclick="audioSeek(Math.max(0,(offset-15)/curDur))" aria-label="Voltar 15 segundos">${ICON.prev}</button>
+          <button class="play-btn" id="play-btn" onclick="togglePlay()">${ICON.play}</button>
+          <button class="ctrl" onclick="audioSeek(Math.min(1,(offset+15)/curDur))" aria-label="Avançar 15 segundos">${ICON.next}</button>
+        </div>
+        <div class="player-note">Áudio de demonstração (piano). Será substituído pela gravação guiada.</div>
+      </div>
+
+      ${roteiro?`<div class="bloco roteiro" style="animation-delay:.2s"><div class="tag">Roteiro breve</div><ol>${roteiro.map(r=>`<li>${r}</li>`).join("")}</ol></div>`:''}
+
+      ${depois?`<div class="bloco depois" style="animation-delay:.24s"><div class="tag">Ao terminar</div><p>${depois}</p></div>`:''}
+
+      ${e.cuidado?`<div class="cuidado" style="animation-delay:.26s">${ICON.info}<div class="c-body"><div class="tag">Cuidado</div><p>${e.cuidado}</p></div></div>`:''}
+
+      ${e.reflexao&&e.reflexao.length?`<div class="reflexao" style="animation-delay:.28s"><div class="tag">Perguntas para acompanhar</div><ul>${e.reflexao.map(q=>`<li>${q}</li>`).join("")}</ul></div>`:''}
+
+      <div class="etapa-actions" style="animation-delay:.3s">
+        ${d
+          ? `<span class="done-flag">${ICON.check} Passo concluído</span>${i+1<total?`<button class="cta" onclick="openStep(${i+1})">Próximo passo ${ICON.arrow}</button>`:`<button class="cta" onclick="renderDone()">Ver o fechamento ${ICON.check}</button>`}`
+          : `<button class="cta" onclick="completeStep(${i})">Marcar como concluído ${ICON.check}</button>`}
+      </div>
+      <div class="back-row"><button class="link-btn" onclick="renderHome()">${ICON.back} Voltar aos passos</button></div>
+    </div>
+  </div>`);
+  tickUI();
+}
+function togglePlay(){ playing?audioPause():audioPlay() }
+function clickBar(ev){ const bar=document.getElementById("bar");const r=bar.getBoundingClientRect();audioSeek((ev.clientX-r.left)/r.width) }
+function completeStep(i){
+  const e=PROTOCOLO.etapas[i];
+  if(!state.concluidas.includes(e.id)){ state.concluidas.push(e.id);save(state) }
+  audioPause();toast("Passo concluído");
+  setTimeout(()=>{ if(i+1<total) openStep(i+1); else renderDone() },650);
+}
+
+/* ---------- painel "preciso pausar" ---------- */
+function openPausar(){
+  audioPause();
+  const p=PROTOCOLO.pausar;
+  document.getElementById("sheet").innerHTML=`
+    <h3>Está tudo bem pausar</h3>
+    <p class="lead">${p.lead}</p>
+    <div class="protecao"><div class="tag">Frase de proteção</div><p>${PROTOCOLO.fraseProtecao}</p></div>
+    <h4>Interrompa a prática se aparecer</h4>
+    <ul>${p.pause.map(x=>`<li>${x}</li>`).join("")}</ul>
+    <h4>Busque apoio profissional se</h4>
+    <ul>${p.ajuda.map(x=>`<li>${x}</li>`).join("")}</ul>
+    <div class="urg"><div class="tag">Em caso de urgência</div><p>Se houver risco imediato à sua segurança, procure um serviço de urgência. [Espaço reservado para o contato de urgência definido pela Dra. Renata.]</p></div>
+    <button class="cta ghost close" onclick="closePausar()">Voltar à prática</button>
+  `;
+  document.getElementById("overlay").classList.add("show");
+}
+function closePausar(){ document.getElementById("overlay").classList.remove("show") }
+document.getElementById("overlay").addEventListener("click",e=>{ if(e.target.id==="overlay") closePausar() });
+
+/* ---------- conclusão ---------- */
+function renderDone(){
+  audioPause();
+  const modo=PROTOCOLO.modos[state.modo];
+  go(`<div class="screen active celebrate">
+    ${header(false)}
+    <div class="seal">${ICON.seal}</div>
+    <h2>Prática concluída</h2>
+    <p>Você percorreu os sete passos no caminho <b>${modo.nome.toLowerCase()}</b>. Dê a si mesmo um momento de silêncio antes de retomar o dia.</p>
+    <div class="para-levar"><div class="tag">Para levar</div><p>Momento a momento, você pode voltar ao corpo, reconhecer o que acontece, escolher com mais presença e celebrar cada passo possível.</p></div>
+    <button class="cta" style="margin-top:26px;max-width:340px;margin-left:auto;margin-right:auto" onclick="renderHome()">Voltar ao início ${ICON.back}</button>
+    <button class="cta ghost" style="max-width:340px;margin-left:auto;margin-right:auto" onclick="restart()">Recomeçar a prática</button>
+    <div class="foot" style="text-align:left">Este guia é material de apoio e não substitui acompanhamento médico ou psicoterápico.</div>
+  </div>`);
+}
+function restart(){ state.concluidas=[];save(state);renderHome() }
+
+/* start */
+route();
+</script>
+</body>
+</html>
