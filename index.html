@@ -365,7 +365,7 @@ const PROTOCOLO = {
       cuidado:"Não force a respiração. Respire apenas um pouco mais do que o habitual. O objetivo é retornar ao presente, não controlar o ar.",
       reflexao:["Que partes do corpo ficaram mais presentes?","Havia alguma tensão que eu não tinha percebido?","Qual palavra descreve meu estado agora?"],
       duracao:"5:10",
-      audio:{ transformacao:"audios/transformacao/1-grounding.mp3", gratidao:"audios/gratidao/1-grounding.mp3" }
+      audio:{ transformacao:"/audios/transformacao/1-grounding.mp3", gratidao:"/audios/gratidao/1-grounding.mp3" }
     },
     {
       id:"mapeamento",
@@ -377,7 +377,7 @@ const PROTOCOLO = {
       instrucaoAntes:"Faça o grounding primeiro e perceba os pés no chão. Deixe que a primeira sensação venha sem forçar. Não há resposta certa.",
       roteiro:{
         transformacao:[
-          "Percorra o corpo com atenção, de cima para baixo e de baixo para cima.",
+          "Percorra o corpo com atenção, de baixo para cima e de cima para baixo.",
           "Perceba áreas de tensão, peso, temperatura, vazio, pressão ou expansão.",
           "Pergunte em silêncio: onde isso aparece no corpo?",
           "Caracterize a sensação: localização, cor, forma, textura, temperatura, movimento ou som.",
@@ -394,7 +394,7 @@ const PROTOCOLO = {
       cuidado:"Comece com questões de intensidade leve ou moderada. Para temas traumáticos ou muito ativadores, pratique apenas com acompanhamento profissional.",
       reflexao:["Onde apareceu no corpo?","Como era a sensação: cor, forma, temperatura, textura ou som?","O que mudou depois de alguns minutos de observação?"],
       duracao:"7:45",
-      audio:{ transformacao:"audios/transformacao/2-mapeamento.mp3", gratidao:"audios/gratidao/2-mapeamento.mp3" }
+      audio:{ transformacao:"/audios/transformacao/2-mapeamento.mp3", gratidao:"/audios/gratidao/2-mapeamento.mp3" }
     },
     {
       id:"agencia",
@@ -426,7 +426,7 @@ const PROTOCOLO = {
       cuidado:"O movimento deve ser seguro para o seu corpo físico. Evite movimentos bruscos, dor, hiperventilação ou práticas que aumentem a desorganização.",
       reflexao:["Quando entro em contato antes de agir, o que percebo de diferente?","Que movimentos costumam me regular?","Qual pequena ação concreta posso escolher hoje?"],
       duracao:"6:20",
-      audio:{ transformacao:"audios/transformacao/3-agencia.mp3", gratidao:"audios/gratidao/3-danca.mp3" }
+      audio:{ transformacao:"/audios/transformacao/3-agencia.mp3", gratidao:"/audios/gratidao/3-danca.mp3" }
     },
     {
       id:"remapeamento",
@@ -445,7 +445,7 @@ const PROTOCOLO = {
       cuidado:"Se a comparação virar cobrança, solte-a. Nem toda prática produz mudança visível, e isso também é uma informação válida.",
       reflexao:["O que mudou no corpo depois do movimento?","A sensação inicial está diferente agora?"],
       duracao:"5:30",
-      audio:{ transformacao:"audios/transformacao/4-remapeamento.mp3", gratidao:"audios/gratidao/4-remapeamento.mp3" }
+      audio:{ transformacao:"/audios/transformacao/4-remapeamento.mp3", gratidao:"/audios/gratidao/4-remapeamento.mp3" }
     },
     {
       id:"insight",
@@ -462,7 +462,7 @@ const PROTOCOLO = {
       cuidado:"Não use o insight para tomar decisões impulsivas. Integre-o com discernimento, com a realidade concreta e, quando necessário, com orientação profissional.",
       reflexao:["Qual palavra, frase ou imagem apareceu?","O que isso tem relação com minha história ou meu momento atual?","Que escolha mais cuidadosa esse insight pode apoiar?"],
       duracao:"5:55",
-      audio:{ transformacao:"audios/transformacao/5-insight.mp3", gratidao:"audios/gratidao/5-insight.mp3" }
+      audio:{ transformacao:"/audios/transformacao/5-insight.mp3", gratidao:"/audios/gratidao/5-insight.mp3" }
     },
     {
       id:"atencao-plena",
@@ -479,7 +479,7 @@ const PROTOCOLO = {
       cuidado:"Silêncio não precisa ser ausência de pensamento. É um espaço de observação, não uma prova a passar.",
       reflexao:["O que ficou mais claro para mim?","Que parte ainda precisa de tempo?"],
       duracao:"6:40",
-      audio:{ transformacao:"audios/transformacao/6-atencao-plena.mp3", gratidao:"audios/gratidao/6-atencao-plena.mp3" }
+      audio:{ transformacao:"/audios/transformacao/6-atencao-plena.mp3", gratidao:"/audios/gratidao/6-atencao-plena.mp3" }
     },
     {
       id:"fechamento",
@@ -496,7 +496,7 @@ const PROTOCOLO = {
       cuidado:"Talvez a mudança não seja perfeição, e sim totalidade: incluir corpo, emoção, limites e escolhas com presença.",
       reflexao:["O que ficou mais claro para mim?","Qual será meu próximo pequeno passo?"],
       duracao:"4:30",
-      audio:{ transformacao:"audios/transformacao/7-fechamento.mp3", gratidao:"audios/gratidao/7-fechamento.mp3" }
+      audio:{ transformacao:"/audios/transformacao/7-fechamento.mp3", gratidao:"/audios/gratidao/7-fechamento.mp3" }
     }
   ],
 
@@ -568,7 +568,19 @@ function stopPiano(){ nodes.forEach(n=>{try{n.stop?n.stop():n.disconnect()}catch
 function audioPlay(){ const ac=ctx();if(ac.state==="suspended")ac.resume();schedulePiano(offset);startAt=ac.currentTime-offset;playing=true;timer=setInterval(tick,120);tickUI() }
 function audioPause(){ if(AC){offset=AC.currentTime-startAt}playing=false;clearInterval(timer);stopPiano();tickUI() }
 function audioSeek(frac){ offset=Math.max(0,Math.min(curDur,frac*curDur));if(playing){stopPiano();startAt=AC.currentTime-offset;schedulePiano(offset)}tick() }
-function tick(){ if(playing&&AC){offset=AC.currentTime-startAt}if(offset>=curDur){offset=curDur;audioPause()}tickUI() }
+function tick(){
+  if(playing&&AC){offset=AC.currentTime-startAt}
+  if(offset>=curDur){ offset=curDur; audioPause(); onAudioEnd(); }
+  tickUI();
+}
+/* passo atual em tela e controle de encadeamento */
+let currentStep=-1, hasPlayed=false, advancing=false;
+function onAudioEnd(){
+  // o áudio chegou ao fim sozinho: conclui e encadeia direto o próximo passo, já tocando
+  if(advancing) return;
+  if(currentStep<0) return;
+  advanceFrom(currentStep, true);
+}
 function tickUI(){
   const fill=document.getElementById("bar-fill"),knob=document.getElementById("bar-knob"),cur=document.getElementById("t-cur"),pb=document.getElementById("play-btn"),viz=document.getElementById("viz");
   if(!fill)return;const frac=Math.min(1,offset/curDur);
@@ -772,8 +784,11 @@ function trocarCaminho(){ // mantém progresso; volta à escolha de modo
 }
 
 /* ---------- ETAPA ---------- */
-function openStep(i){
+function openStep(i, autoStart){
   if(!isUnlocked(i)){ toast("Conclua o passo anterior primeiro"); return; }
+  advancing=false;
+  currentStep=i;
+  hasPlayed=false;
   const e=PROTOCOLO.etapas[i];
   const p=e.duracao.split(":");const durSec=(+p[0])*60+(+p[1]);
   resetAudio(durSec);
@@ -786,7 +801,7 @@ function openStep(i){
 
   go(`<div class="screen active">
     <div class="step-nav">
-      <button class="link-btn" onclick="renderHome()">${ICON.back} Passos</button>
+      <button class="link-btn" onclick="goHomeFromStep()">${ICON.back} Passos</button>
       <button class="pausar-btn" onclick="openPausar()">${ICON.shield} Pausar</button>
     </div>
     <div class="stagger">
@@ -821,23 +836,36 @@ function openStep(i){
       ${e.reflexao&&e.reflexao.length?`<div class="reflexao" style="animation-delay:.28s"><div class="tag">Perguntas para acompanhar</div><ul>${e.reflexao.map(q=>`<li>${q}</li>`).join("")}</ul></div>`:''}
 
       <div class="etapa-actions" style="animation-delay:.3s">
-        ${d
-          ? `<span class="done-flag">${ICON.check} Passo concluído</span>${i+1<total?`<button class="cta" onclick="openStep(${i+1})">Próximo passo ${ICON.arrow}</button>`:`<button class="cta" onclick="renderDone()">Ver o fechamento ${ICON.check}</button>`}`
-          : `<button class="cta" onclick="completeStep(${i})">Marcar como concluído ${ICON.check}</button>`}
+        ${d?`<span class="done-flag">${ICON.check} Passo concluído</span>`:''}
+        ${i+1<total
+          ? `<button class="cta" onclick="advanceFrom(${i}, true)">Avançar para o próximo passo ${ICON.arrow}</button>`
+          : `<button class="cta" onclick="advanceFrom(${i}, true)">Concluir e ver o fechamento ${ICON.check}</button>`}
       </div>
-      <div class="back-row"><button class="link-btn" onclick="renderHome()">${ICON.back} Voltar aos passos</button></div>
+      <div class="back-row"><button class="link-btn" onclick="goHomeFromStep()">${ICON.back} Voltar aos passos</button></div>
     </div>
   </div>`);
   tickUI();
+  if(autoStart){
+    // encadeamento após o primeiro play manual: tenta tocar automaticamente.
+    // navegadores móveis podem exigir novo toque; nesse caso o passo abre pronto no play.
+    hasPlayed=true;
+    try{ audioPlay(); }catch(err){}
+  }
 }
-function togglePlay(){ playing?audioPause():audioPlay() }
+function togglePlay(){ if(!playing){ hasPlayed=true; audioPlay(); } else { audioPause(); } }
 function clickBar(ev){ const bar=document.getElementById("bar");const r=bar.getBoundingClientRect();audioSeek((ev.clientX-r.left)/r.width) }
-function completeStep(i){
+function advanceFrom(i, autoplayNext){
+  advancing=true;
   const e=PROTOCOLO.etapas[i];
-  if(!state.concluidas.includes(e.id)){ state.concluidas.push(e.id);save(state) }
-  audioPause();toast("Passo concluído");
-  setTimeout(()=>{ if(i+1<total) openStep(i+1); else renderDone() },650);
+  if(!state.concluidas.includes(e.id)){ state.concluidas.push(e.id); save(state); }
+  audioPause();
+  if(i+1<total){
+    setTimeout(()=>{ openStep(i+1, autoplayNext); }, 350);
+  } else {
+    setTimeout(()=>{ renderDone(); }, 350);
+  }
 }
+function goHomeFromStep(){ audioPause(); currentStep=-1; renderHome(); }
 
 /* ---------- painel "preciso pausar" ---------- */
 function openPausar(){
