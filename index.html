@@ -18,7 +18,7 @@
     --papel:#FBFAF7;
     --papel-card:#FFFFFF;
     --tinta:#2B3944;
-    --tinta-suave:#5E6E78;
+    --tinta-suave:#4A5A64;
     --tinta-tenue:#93A2AC;
     --linha:#E7EDF0;
     --alerta:#8A6A2F;
@@ -75,7 +75,7 @@
   .eyebrow{font-size:12.5px;letter-spacing:.22em;text-transform:uppercase;color:var(--dourado);font-weight:600;margin-top:34px}
   .home-title{font-family:var(--serif);font-weight:400;font-size:clamp(31px,8.5vw,42px);line-height:1.12;color:var(--marinho);margin-top:12px;letter-spacing:-.01em}
   .home-sub{font-size:14px;color:var(--tinta-tenue);margin-top:10px;font-weight:500;letter-spacing:.02em}
-  .home-desc{color:var(--tinta-suave);font-size:16.5px;font-weight:300;margin-top:18px;max-width:46ch}
+  .home-desc{color:var(--tinta-suave);font-size:16.5px;font-weight:400;margin-top:18px;max-width:46ch}
   .home-desc strong{font-weight:500;color:var(--tinta)}
 
   .mode-pill{
@@ -147,7 +147,7 @@
   .mode-intro{text-align:center;margin-top:40px}
   .mode-intro .eyebrow{margin-top:0}
   .mode-intro h2{font-family:var(--serif);font-weight:400;font-size:28px;color:var(--marinho);margin-top:12px;line-height:1.18}
-  .mode-intro p{color:var(--tinta-suave);font-size:15.5px;font-weight:300;margin-top:12px}
+  .mode-intro p{color:var(--tinta-suave);font-size:15.5px;font-weight:400;margin-top:12px}
   .mode-list{display:flex;flex-direction:column;gap:14px;margin-top:30px}
   .mode-opt{
     text-align:left;cursor:pointer;font-family:var(--sans);padding:22px;border-radius:var(--raio);
@@ -169,7 +169,7 @@
   .step-index b{color:var(--marinho)}
   .etapa-eyebrow{font-size:12.5px;letter-spacing:.22em;text-transform:uppercase;color:var(--dourado);font-weight:600;margin-top:26px}
   .etapa-title{font-family:var(--serif);font-weight:400;font-size:clamp(28px,7.5vw,36px);line-height:1.14;color:var(--marinho);margin-top:10px;letter-spacing:-.01em}
-  .etapa-desc{color:var(--tinta-suave);font-size:16.5px;font-weight:300;margin-top:16px}
+  .etapa-desc{color:var(--tinta-suave);font-size:16.5px;font-weight:400;margin-top:16px}
 
   .bloco{margin-top:26px;padding:20px 22px;border-radius:var(--raio);border:1px solid var(--linha)}
   .bloco .tag{font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;font-weight:600}
@@ -341,7 +341,7 @@ const PROTOCOLO = {
           pescaria:"Você escolheu o caminho da gratidão, no modo pescaria. Traga à mente um conflito ou uma dificuldade e, dentro dele, pesque algo pelo que possa se sentir grato: um aprendizado, um crescimento, uma ampliação do olhar.",
           comose:"Você escolheu o caminho da gratidão, no modo como se. Escolha algo que você deseja e entre em contato com a gratidão como se aquilo já tivesse se concretizado."
         },
-        confirmar:"Escolhi o que quero celebrar"
+        confirmar:"Escolhi pelo que me sinto grato"
       }
     }
   },
@@ -526,15 +526,42 @@ function pick(v, modo){ return (v && typeof v==="object" && !Array.isArray(v)) ?
 /* =====================================================================
    ESTADO (localStorage)
    ===================================================================== */
-const KEY="ips_protocolo_v2";
+const KEY="ips_protocolo_v3";
 function load(){ try{return JSON.parse(localStorage.getItem(KEY))||{}}catch(e){return {}} }
 function save(s){ try{localStorage.setItem(KEY,JSON.stringify(s))}catch(e){} }
-let state=load(); // { modo, submodo, escolhaFeita, concluidas:[], }
-if(!state.concluidas) state.concluidas=[];
+let state=load();
+/* Estrutura do estado:
+   {
+     modo, submodo, escolhaFeita,   // caminho atualmente selecionado
+     caminhos: { "<chave>": { concluidas:[ids] } },  // progresso separado por caminho
+     sessao: { chave, passo, ts }   // sessão em andamento, para retomada por interrupção breve
+   }
+   Cada caminho é independente: "transformacao", "gratidao:puro", "gratidao:pescaria", "gratidao:comose".
+   Trocar ou retomar um caminho recomeça do grounding; só a interrupção breve (<=2 min) retoma o passo. */
+if(!state.caminhos) state.caminhos={};
+
+const RETOMADA_MS=2*60*1000; // 2 minutos
+
+function caminhoKey(){
+  if(!state.modo) return null;
+  return state.modo==="gratidao" ? "gratidao:"+(state.submodo||"?") : state.modo;
+}
+function prog(){ // progresso do caminho atual (cria se não existir)
+  const k=caminhoKey(); if(!k) return {concluidas:[]};
+  if(!state.caminhos[k]) state.caminhos[k]={concluidas:[]};
+  if(!state.caminhos[k].concluidas) state.caminhos[k].concluidas=[];
+  return state.caminhos[k];
+}
+function zerarCaminho(){ // recomeça do grounding
+  const k=caminhoKey(); if(!k) return;
+  state.caminhos[k]={concluidas:[]};
+  state.sessao=null;
+  save(state);
+}
 
 const total=PROTOCOLO.etapas.length;
-function doneCount(){ return PROTOCOLO.etapas.filter(e=>state.concluidas.includes(e.id)).length }
-function isDone(i){ return state.concluidas.includes(PROTOCOLO.etapas[i].id) }
+function doneCount(){ const c=prog().concluidas; return PROTOCOLO.etapas.filter(e=>c.includes(e.id)).length }
+function isDone(i){ return prog().concluidas.includes(PROTOCOLO.etapas[i].id) }
 function firstOpen(){ for(let i=0;i<total;i++){ if(!isDone(i)) return i } return total }
 function isUnlocked(i){ return i<=firstOpen() }
 function fmt(t){ const m=Math.floor(t/60),s=Math.floor(t%60); return m+":"+String(s).padStart(2,"0") }
@@ -565,8 +592,8 @@ function schedulePiano(from){
   }
 }
 function stopPiano(){ nodes.forEach(n=>{try{n.stop?n.stop():n.disconnect()}catch(e){}});nodes=[] }
-function audioPlay(){ const ac=ctx();if(ac.state==="suspended")ac.resume();schedulePiano(offset);startAt=ac.currentTime-offset;playing=true;timer=setInterval(tick,120);tickUI() }
-function audioPause(){ if(AC){offset=AC.currentTime-startAt}playing=false;clearInterval(timer);stopPiano();tickUI() }
+function audioPlay(){ const ac=ctx();if(ac.state==="suspended")ac.resume();schedulePiano(offset);startAt=ac.currentTime-offset;playing=true;timer=setInterval(tick,120);requestWakeLock();tickUI() }
+function audioPause(){ if(AC){offset=AC.currentTime-startAt}playing=false;clearInterval(timer);stopPiano();releaseWakeLock();tickUI() }
 function audioSeek(frac){ offset=Math.max(0,Math.min(curDur,frac*curDur));if(playing){stopPiano();startAt=AC.currentTime-offset;schedulePiano(offset)}tick() }
 function tick(){
   if(playing&&AC){offset=AC.currentTime-startAt}
@@ -621,6 +648,20 @@ function toast(msg){ const t=document.getElementById("toast");document.getElemen
 
 function route(){
   audioPause();
+  // Retomada por interrupção breve: recarregou/voltou em até 2 minutos, no mesmo caminho.
+  if(state.sessao && state.escolhaFeita && state.sessao.chave===caminhoKey()
+     && (Date.now()-state.sessao.ts)<=RETOMADA_MS){
+    const passo=Math.min(state.sessao.passo, total-1);
+    // abre o passo PARADO (sem autoplay): ela retoma dando play quando quiser
+    if(!state.modo){ renderMode(); return; }
+    if(state.modo==="gratidao" && !state.submodo){ renderSubmodo(); return; }
+    openStep(passo, false);
+    return;
+  }
+  // Passou dos 2 minutos ou caminho diferente: sessão expira, recomeça do grounding.
+  if(state.sessao && (Date.now()-state.sessao.ts)>RETOMADA_MS){
+    if(state.escolhaFeita) zerarCaminho(); // limpa o progresso do caminho da sessão expirada
+  }
   if(!state.modo){ renderMode(); return; }
   if(state.modo==="gratidao" && !state.submodo){ renderSubmodo(); return; }
   if(!state.escolhaFeita){ renderEscolha(); return; }
@@ -630,7 +671,7 @@ function route(){
 /* header reutilizável com botão pausar */
 function header(showPausar){
   return `<div class="topbar">
-    <div class="brand">Dra. Renata Guerra<span>.</span></div>
+    <div class="brand" onclick="goToStart()" style="cursor:pointer" role="button" tabindex="0" title="Voltar ao início">Dra. Renata Guerra<span>.</span></div>
     ${showPausar?`<button class="pausar-btn" onclick="openPausar()">${ICON.shield} Preciso pausar</button>`:''}
   </div>`;
 }
@@ -659,7 +700,7 @@ function renderMode(){
   </div>`);
 }
 function pickMode(k){
-  state.modo=k; state.submodo=null; state.escolhaFeita=false; save(state);
+  state.modo=k; state.submodo=null; state.escolhaFeita=false; state.sessao=null; save(state);
   if(k==="gratidao") renderSubmodo(); else renderEscolha();
 }
 
@@ -680,8 +721,8 @@ function renderSubmodo(){
     </div>
   </div>`);
 }
-function pickSub(id){ state.submodo=id; save(state); renderEscolha(); }
-function backToMode(){ state.modo=null;state.submodo=null;state.escolhaFeita=false;save(state);renderMode(); }
+function pickSub(id){ state.submodo=id; state.sessao=null; save(state); renderEscolha(); }
+function backToMode(){ state.modo=null;state.submodo=null;state.escolhaFeita=false;state.sessao=null;save(state);renderMode(); }
 
 /* ---------- tela de escolha (travada, com check) ---------- */
 function renderEscolha(){
@@ -719,7 +760,15 @@ function toggleChoice(){
   document.getElementById("chk").classList.toggle("on",choiceOn);
   document.getElementById("escolha-cta").disabled=!choiceOn;
 }
-function confirmEscolha(){ if(!choiceOn)return; state.escolhaFeita=true; save(state); choiceOn=false; renderHome(); }
+function confirmEscolha(){
+  if(!choiceOn) return;
+  state.escolhaFeita=true;
+  zerarCaminho();                 // entrar num caminho recomeça sempre do grounding
+  state.sessao={ chave:caminhoKey(), passo:0, ts:Date.now() };
+  save(state);
+  choiceOn=false;
+  renderHome();
+}
 
 /* ---------- HOME ---------- */
 function renderHome(){
@@ -779,7 +828,12 @@ function renderHome(){
   </div>`);
   requestAnimationFrame(()=>{const tf=document.getElementById("tf");if(tf)tf.style.width=(frac*100)+"%"});
 }
-function trocarCaminho(){ // mantém progresso; volta à escolha de modo
+function trocarCaminho(){ // vai à escolha de modo; progresso de cada caminho é preservado em separado
+  audioPause(); currentStep=-1; advancing=false;
+  renderMode();
+}
+function goToStart(){ // clique no nome da Dra. Renata: sempre volta à escolha de modo
+  audioPause(); currentStep=-1; advancing=false;
   renderMode();
 }
 
@@ -789,6 +843,8 @@ function openStep(i, autoStart){
   advancing=false;
   currentStep=i;
   hasPlayed=false;
+  state.sessao={ chave:caminhoKey(), passo:i, ts:Date.now() };
+  save(state);
   const e=PROTOCOLO.etapas[i];
   const p=e.duracao.split(":");const durSec=(+p[0])*60+(+p[1]);
   resetAudio(durSec);
@@ -857,11 +913,16 @@ function clickBar(ev){ const bar=document.getElementById("bar");const r=bar.getB
 function advanceFrom(i, autoplayNext){
   advancing=true;
   const e=PROTOCOLO.etapas[i];
-  if(!state.concluidas.includes(e.id)){ state.concluidas.push(e.id); save(state); }
+  const p=prog();
+  if(!p.concluidas.includes(e.id)){ p.concluidas.push(e.id); }
   audioPause();
   if(i+1<total){
+    state.sessao={ chave:caminhoKey(), passo:i+1, ts:Date.now() };
+    save(state);
     setTimeout(()=>{ openStep(i+1, autoplayNext); }, 350);
   } else {
+    state.sessao=null;
+    save(state);
     setTimeout(()=>{ renderDone(); }, 350);
   }
 }
@@ -902,7 +963,49 @@ function renderDone(){
     <div class="foot" style="text-align:left">Este guia é material de apoio e não substitui acompanhamento médico ou psicoterápico.</div>
   </div>`);
 }
-function restart(){ state.concluidas=[];save(state);renderHome() }
+function restart(){ zerarCaminho(); renderHome(); }
+
+/* ---------- Wake Lock: mantém a tela acesa enquanto o áudio toca ----------
+   Funciona no Chrome/Android. No iOS/Safari o suporte é irregular; onde não
+   houver, a tela segue o bloqueio normal do aparelho (limite da plataforma). */
+let wakeLock=null;
+async function requestWakeLock(){
+  try{
+    if("wakeLock" in navigator){
+      wakeLock=await navigator.wakeLock.request("screen");
+      wakeLock.addEventListener&&wakeLock.addEventListener("release",()=>{ wakeLock=null; });
+    }
+  }catch(err){ /* negado ou indisponível: silencioso */ }
+}
+async function releaseWakeLock(){
+  try{ if(wakeLock){ await wakeLock.release(); wakeLock=null; } }catch(err){}
+}
+
+/* ---------- Interrupção breve x nova sessão ----------
+   Se a pessoa sai do app (tela apaga, troca de app, atende o telefone) e volta:
+   até 2 minutos, permanece no passo onde estava; passou disso, volta ao grounding. */
+let leftAt=0;
+document.addEventListener("visibilitychange",()=>{
+  if(document.visibilityState==="hidden"){
+    leftAt=Date.now();
+    if(playing) audioPause();               // pausa ao sair; o ponto do áudio é preservado
+    if(state.sessao){ state.sessao.ts=Date.now(); save(state); }
+  } else {
+    // voltou ao app
+    if(wakeLock===null && playing) requestWakeLock();
+    if(currentStep>=0 && leftAt>0){
+      const fora=Date.now()-leftAt;
+      if(fora>RETOMADA_MS){
+        // interrupção longa: recomeça o caminho do grounding
+        zerarCaminho();
+        currentStep=-1;
+        goToStart();
+        toast("A prática recomeça do grounding");
+      }
+    }
+    leftAt=0;
+  }
+});
 
 /* start */
 route();
